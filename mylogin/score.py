@@ -4,7 +4,17 @@ from django.core import serializers
 from .models import UserInfo, ScoreInfo, ExamInfo
 from .const import SUBJECT_MAJOR, SUBJECT_ALL, StatusCode
 
+
 def create_score(request):
+    """
+    根据所给的全部信息，创建score表项。
+
+    :param request.*: int or str
+    :return: JsonResponse(
+        'status_code': int
+        'status_msg': str
+    )
+    """
     if request.method == 'POST':
         # 从request获取数据
         try:
@@ -25,7 +35,7 @@ def create_score(request):
                 'status_code': StatusCode.INVALID_ARGUMENT,
                 'status_msg': 'Create score failed. Error: invalid subject.'
             })
-        if score < 0 or (subject in SUBJECT_MAJOR and score > 150) or (subject not in SUBJECT_MAJOR and score >100):
+        if score < 0 or (subject in SUBJECT_MAJOR and score > 150) or (subject not in SUBJECT_MAJOR and score > 100):
             return JsonResponse({
                 'status_code': StatusCode.INVALID_ARGUMENT,
                 'status_msg': 'Create score failed. Error: invalid score.'
@@ -49,7 +59,7 @@ def create_score(request):
 
         # check data duplication
         score_origin = ScoreInfo.objects.filter(student_id=student_id, teacher_id=teacher_id, exam_id=exam_id,
-                          score=score, subject=subject)
+                                                score=score, subject=subject)
         if score_origin:
             return JsonResponse({
                 'status_code': StatusCode.DUPLICATE_DATA,
@@ -71,7 +81,19 @@ def create_score(request):
             'status_msg': 'Invalid request method.'
         })
 
+
 def modify_score(request):
+    """
+    通过score_id找到需要修改的score，填入new_score
+
+    :param request.score_id: str
+    :param request.new_score: str
+    :return: JsonResponse(
+        'status_code': int
+        'status_msg': str
+    )
+    """
+
     if request.method == "POST":
         try:
             score_id = int(request.POST.get('score_id'))
@@ -101,11 +123,16 @@ def modify_score(request):
             'status_msg': 'Invalid request method.'
         })
 
+
 def delete_score(request):
     """
+    按照score_id（主键）删除数据
 
-    :param request.score_id:
-    :return:
+    :param request.score_id: str
+    :return: JsonResponse(
+        'status_code': int
+        'status_msg': str
+    )
     """
     if request.method == "POST":
         try:
@@ -133,7 +160,6 @@ def delete_score(request):
             'status_code': StatusCode.INVALID_METHOD,
             'status_msg': 'Invalid request method.'
         })
-
 
 
 def list_score(request):
@@ -164,7 +190,8 @@ def list_score(request):
             })
 
         # todo 返回数据需要修改
-        # score = ScoreInfo.objects.filter(teacher_id=user_id).values('score_id','score','subject','student_id','exam_id')
+        # score = (ScoreInfo.objects.filter(teacher_id=user_id)
+        #         .values('score_id','score','subject','student_id','exam_id'))
         score = ScoreInfo.objects.filter(teacher_id=user_id)
         return JsonResponse({
             'status_code': StatusCode.SUCCESS,
@@ -177,6 +204,7 @@ def list_score(request):
             'status_code': StatusCode.INVALID_METHOD,
             'status_msg': 'Invalid request method.'
         })
+
 
 def query_score(request):
     pass

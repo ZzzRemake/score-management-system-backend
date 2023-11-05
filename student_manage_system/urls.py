@@ -21,10 +21,10 @@ from mylogin import score
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('test1/', login.test1),
-    path('login/',login.login),
+    path('login/', login.login),
     path('register/', login.register),
     path('score/create', score.create_score),
     path('score/delete', score.delete_score),
-    path('score/list',score.list_score),
-    path('score/modify',score.modify_score),
+    path('score/list', score.list_score),
+    path('score/modify', score.modify_score),
 ]

@@ -7,10 +7,12 @@ from .const import StatusCode
 # from .models import UserInfo
 from .models import UserInfo
 
+
 def test1(request):
     # 处理你的接口逻辑
     data = {'message': 'Hello, this is your API response!'}
     return JsonResponse(data)
+
 
 def login(request):
     if request.method == 'POST':
@@ -69,3 +71,6 @@ def register(request):
             'status_code': StatusCode.INVALID_METHOD,
             'status_msg': 'Invalid request method'
         })
+
+def logout(request):
+    pass
