@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.core import serializers
 
 from .models import UserInfo, ScoreInfo, ExamInfo
 from .const import SUBJECT_MAJOR, SUBJECT_ALL, StatusCode
@@ -6,11 +7,17 @@ from .const import SUBJECT_MAJOR, SUBJECT_ALL, StatusCode
 def create_score(request):
     if request.method == 'POST':
         # 从request获取数据
-        student_id = int(request.POST.get('student_id'))
-        exam_id = int(request.POST.get('exam_id'))
-        teacher_id = int(request.POST.get('teacher_id'))
-        score = int(request.POST.get('score'))
-        subject = request.POST.get('subject')
+        try:
+            student_id = int(request.POST.get('student_id'))
+            exam_id = int(request.POST.get('exam_id'))
+            teacher_id = int(request.POST.get('teacher_id'))
+            score = int(request.POST.get('score'))
+            subject = str(request.POST.get('subject'))
+        except ValueError:
+            return JsonResponse({
+                'status_code': StatusCode.INVALID_TYPE,
+                'status_msg': 'Create score failed. Error: invalid type'
+            })
 
         # check data validation
         if subject not in SUBJECT_ALL:
@@ -46,7 +53,7 @@ def create_score(request):
         if score_origin:
             return JsonResponse({
                 'status_code': StatusCode.DUPLICATE_DATA,
-                'status_msg': 'Create score success.'
+                'status_msg': 'Create score failed. Error: duplicate score'
             })
 
         # create and save data
@@ -65,13 +72,111 @@ def create_score(request):
         })
 
 def modify_score(request):
-    pass
+    if request.method == "POST":
+        try:
+            score_id = int(request.POST.get('score_id'))
+            new_score = int(request.POST.get('new_score'))
+        except ValueError:
+            return JsonResponse({
+                'status_code': StatusCode.INVALID_TYPE,
+                'status_msg': 'Modify score failed. Error: invalid type.'
+            })
+        try:
+            score = ScoreInfo.objects.get(score_id=score_id)
+            score.score = new_score
+            score.save()
+            return JsonResponse({
+                'status_code': StatusCode.SUCCESS,
+                'status_msg': 'Modify score success.'
+            })
+        except ScoreInfo.DoesNotExist:
+            return JsonResponse({
+                'status_code': StatusCode.NONE_DATA,
+                'status_msg': 'Modify score failed. Error: score is null.'
+            })
+    else:
+        # invalid method
+        return JsonResponse({
+            'status_code': StatusCode.INVALID_METHOD,
+            'status_msg': 'Invalid request method.'
+        })
 
 def delete_score(request):
-    pass
+    """
+
+    :param request.score_id:
+    :return:
+    """
+    if request.method == "POST":
+        try:
+            score_id = int(request.POST.get('score_id'))
+        except ValueError:
+            return JsonResponse({
+                'status_code': StatusCode.INVALID_TYPE,
+                'status_msg': 'Delete score failed. Error: invalid type.'
+            })
+        score = ScoreInfo.objects.filter(score_id=score_id)
+        if score:
+            score.delete()
+            return JsonResponse({
+                'status_code': StatusCode.SUCCESS,
+                'status_msg': 'Delete score success'
+            })
+        else:
+            return JsonResponse({
+                'status_code': StatusCode.NONE_DATA,
+                'status_msg': 'Delete score failed. Error: score is null.'
+            })
+    else:
+        # invalid method
+        return JsonResponse({
+            'status_code': StatusCode.INVALID_METHOD,
+            'status_msg': 'Invalid request method.'
+        })
+
+
 
 def list_score(request):
-    pass
+    """
+    列出关于user_id（老师）的所有score。
+
+    :param request.user_id: str
+    :return: JsonResponse(
+        'status_code': int
+        'status_msg': str
+        'score_info': array of dict.(optional)
+    )
+    """
+    if request.method == "POST":
+        try:
+            user_id = int(request.POST.get('user_id'))
+        except ValueError:
+            return JsonResponse({
+                'status_code': StatusCode.INVALID_TYPE,
+                'status_msg': 'List score failed. Error: invalid type.'
+            })
+        try:
+            teacher = UserInfo.objects.get(user_id=user_id, role='teacher')
+        except UserInfo.DoesNotExist:
+            return JsonResponse({
+                'status_code': StatusCode.INVALID_ARGUMENT,
+                'status_msg': 'List score failed. Error: invalid argument.'
+            })
+
+        # todo 返回数据需要修改
+        # score = ScoreInfo.objects.filter(teacher_id=user_id).values('score_id','score','subject','student_id','exam_id')
+        score = ScoreInfo.objects.filter(teacher_id=user_id)
+        return JsonResponse({
+            'status_code': StatusCode.SUCCESS,
+            'status_msg': 'List score success.',
+            'score_info': serializers.serialize('python', score)
+        })
+    else:
+        # invalid method
+        return JsonResponse({
+            'status_code': StatusCode.INVALID_METHOD,
+            'status_msg': 'Invalid request method.'
+        })
 
 def query_score(request):
     pass

@@ -5,5 +5,9 @@ SUBJECT_MAJOR = SUBJECT_ALL[:3]
 class StatusCode():
     SUCCESS = 0
     INVALID_METHOD = 1
+    # Argument: 参数输入后的合法性检测
     INVALID_ARGUMENT = 2
-    DUPLICATE_DATA = 3
+    # Type: 参数输入后的类型检测
+    INVALID_TYPE = 3
+    DUPLICATE_DATA = 4
+    NONE_DATA = 5
