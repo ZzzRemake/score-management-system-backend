@@ -20,9 +20,7 @@ def login(request):
             user = UserInfo.objects.get(account=account, password=password)
             return JsonResponse({
                 'status_code': 0,
-                'status_msg': 'Login successful',
-                'user_id': user.user_id,
-                'role': user.role
+                'status_msg': 'Login successful'
             })
         except UserInfo.DoesNotExist:
             return JsonResponse({
@@ -47,8 +45,7 @@ def register(request):
             user = UserInfo.objects.create(account=account, password=password, name=name, role=role)
             return JsonResponse({
                 'status_code': 0,
-                'status_msg': 'Registration successful',
-                'user_id': user.user_id,
+                'status_msg': 'Registration successful'
 
             })
         except Exception as e:
