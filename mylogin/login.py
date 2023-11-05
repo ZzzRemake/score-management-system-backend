@@ -43,13 +43,21 @@ def register(request):
         name = request.POST.get('name')
         role = request.POST.get('role')
 
+        # check repeat register
+        user_temp = UserInfo.objects.filter(account=account)
+        if user_temp:
+            return JsonResponse({
+                'status_code': StatusCode.DUPLICATE_DATA,
+                'status_msg': 'Registration failed. Error: duplicate register.'
+            })
+
+        # todo 有时间搞个邮箱验证码？
         try:
             user = UserInfo.objects.create(account=account, password=password, name=name, role=role)
             return JsonResponse({
                 'status_code': StatusCode.SUCCESS,
                 'status_msg': 'Registration successful',
                 'user_id': user.user_id,
-
             })
         except Exception as e:
             return JsonResponse({
