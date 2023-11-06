@@ -22,4 +22,7 @@ urlpatterns = [
     path('test1/', mylogin.test1),
     path('login/',mylogin.login),
     path('register/', mylogin.register),
+    path('logout/', mylogin.logout),
+    path('class_apend/',mylogin.class_apend),
+    path('get_score/',mylogin.get_score)
 ]
