@@ -4,8 +4,6 @@ from django.shortcuts import render
 from django.http import JsonResponse
 
 from .const import StatusCode
-# from .models import UserInfo
-from .models import UserInfo
 
 
 def test1(request):
@@ -25,6 +23,7 @@ def login(request):
         try:
             user = UserInfo.objects.get(account=account, password=password)
             if user.is_login:
+                # todo 这里是否要改成重定向？既然重新登陆了，那就应该让用户进系统。
                 return JsonResponse({
                     'status_code': StatusCode.DUPLICATE_DATA,
                     'status_msg': 'User already logged in'
@@ -48,6 +47,7 @@ def login(request):
         })
 
 
+# 暂且无用的路由：没有实现register模块
 def register(request):
     if request.method == 'POST':
         account = request.POST.get('account')

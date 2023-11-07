@@ -28,6 +28,6 @@ urlpatterns = [
     path('score/list', score.list_score),
     path('score/modify', score.modify_score),
     path('logout/', login.logout),
-    path('class_apend/',classes.class_apend),
-    path('get_score/',score.get_score)
+    path('class_append/', classes.class_append),
+    path('get_score/', score.get_score_by_account)
 ]

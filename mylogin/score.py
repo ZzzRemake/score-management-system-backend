@@ -1,8 +1,14 @@
 from django.http import JsonResponse
 from django.core import serializers
 
-from .models import UserInfo, ScoreInfo, ExamInfo, ClassInfo
+from .models import UserInfo, ScoreInfo, ExamInfo, ClassInfo, StudentInfo, TeacherInfo
 from .const import SUBJECT_MAJOR, SUBJECT_ALL, StatusCode
+
+def _check_score_validate(score:int, subject: str):
+    if score < 0 or (subject in SUBJECT_MAJOR and score > 150) or (subject not in SUBJECT_MAJOR and score > 100):
+        return StatusCode.INVALID_ARGUMENT
+    else:
+        return StatusCode.SUCCESS
 
 
 def create_score(request):
@@ -35,7 +41,7 @@ def create_score(request):
                 'status_code': StatusCode.INVALID_ARGUMENT,
                 'status_msg': 'Create score failed. Error: invalid subject.'
             })
-        if score < 0 or (subject in SUBJECT_MAJOR and score > 150) or (subject not in SUBJECT_MAJOR and score > 100):
+        if _check_score_validate(score, subject) != StatusCode.SUCCESS:
             return JsonResponse({
                 'status_code': StatusCode.INVALID_ARGUMENT,
                 'status_msg': 'Create score failed. Error: invalid score.'
@@ -43,13 +49,18 @@ def create_score(request):
 
         # check exist necessary key
         try:
-            student = UserInfo.objects.get(role='student', user_id=student_id)
-            exam = ExamInfo.objects.get(exam_id=exam_id, subject=subject)
-            teacher = UserInfo.objects.get(role='teacher', user_id=teacher_id)
-        except UserInfo.DoesNotExist:
+            student = StudentInfo.objects.get(user_id=student_id)
+            exam = ExamInfo.objects.get(exam_id=exam_id)
+            teacher = TeacherInfo.objects.get(user_id=teacher_id)
+        except StudentInfo.DoesNotExist:
             return JsonResponse({
                 'status_code': StatusCode.INVALID_ARGUMENT,
-                'status_msg': 'Create score failed. Error: invalid student or teacher.'
+                'status_msg': 'Create score failed. Error: invalid student.'
+            })
+        except TeacherInfo.DoesNotExist:
+            return JsonResponse({
+                'status_code': StatusCode.INVALID_ARGUMENT,
+                'status_msg': 'Create score failed. Error: invalid teacher.'
             })
         except ExamInfo.DoesNotExist:
             return JsonResponse({
@@ -57,19 +68,16 @@ def create_score(request):
                 'status_msg': 'Create score failed. Error: invalid exam.'
             })
 
-        # check data duplication
-        score_origin = ScoreInfo.objects.filter(student_id=student_id, teacher_id=teacher_id, exam_id=exam_id,
-                                                score=score, subject=subject)
-        if score_origin:
-            return JsonResponse({
-                'status_code': StatusCode.DUPLICATE_DATA,
-                'status_msg': 'Create score failed. Error: duplicate score'
-            })
-
         # create and save data
-        score = ScoreInfo(student_id=student_id, teacher_id=teacher_id, exam_id=exam_id,
+        score, created = ScoreInfo.objects.get_or_create(student_id=student_id, teacher_id=teacher_id, exam_id=exam_id,
                           score=score, subject=subject)
-        score.save()
+        if created:
+            score.save()
+        else:
+            return JsonResponse({
+            'status_code': StatusCode.DUPLICATE_DATA,
+            'status_msg': 'Create score success.'
+        })
         return JsonResponse({
             'status_code': StatusCode.SUCCESS,
             'status_msg': 'Create score success.'
@@ -105,6 +113,11 @@ def modify_score(request):
             })
         try:
             score = ScoreInfo.objects.get(score_id=score_id)
+            if _check_score_validate(score=new_score, subject=score.subject) != StatusCode.SUCCESS:
+                return JsonResponse({
+                    'status_code': StatusCode.INVALID_ARGUMENT,
+                    'status_msg': 'Modify score failed. Error: invalid score.'
+                })
             score.score = new_score
             score.save()
             return JsonResponse({
@@ -165,6 +178,7 @@ def delete_score(request):
 def list_score(request):
     """
     列出关于user_id（老师）的所有score。
+    老师不用学生的所方面需求，只需要对score进行增删改查即可。
 
     :param request.user_id: str
     :return: JsonResponse(
@@ -182,8 +196,8 @@ def list_score(request):
                 'status_msg': 'List score failed. Error: invalid type.'
             })
         try:
-            teacher = UserInfo.objects.get(user_id=user_id, role='teacher')
-        except UserInfo.DoesNotExist:
+            teacher = TeacherInfo.objects.get(user_id=user_id)
+        except TeacherInfo.DoesNotExist:
             return JsonResponse({
                 'status_code': StatusCode.INVALID_ARGUMENT,
                 'status_msg': 'List score failed. Error: invalid argument.'
@@ -192,11 +206,28 @@ def list_score(request):
         # todo 返回数据需要修改
         # score = (ScoreInfo.objects.filter(teacher_id=user_id)
         #         .values('score_id','score','subject','student_id','exam_id'))
-        score = ScoreInfo.objects.filter(teacher_id=user_id)
+        exams = ExamInfo.objects.filter(exam_scores__teacher=teacher).distinct()
+        print(exams)
+        score_info = []
+        for exam in exams:
+            exam_info = {
+                'exam_name': exam.exam_name,
+                'exam_time': exam.exam_time,
+                'score': []
+            }
+            now_scores = ScoreInfo.objects.filter(exam=exam)
+            for score in now_scores:
+                exam_info['score'].append({
+                    'student': score.student.student_name,
+                    'subject': score.subject,
+                    'score': score.score
+                })
+            score_info.append(exam_info)
+
         return JsonResponse({
             'status_code': StatusCode.SUCCESS,
             'status_msg': 'List score success.',
-            'score_info': serializers.serialize('python', score)
+            'score_info': score_info
         })
     else:
         # invalid method
@@ -206,43 +237,37 @@ def list_score(request):
         })
 
 
-def get_score(request):
+def get_score_by_account(request):
     if request.method == 'GET':
         account = request.GET.get('account')
         try:
-            student = UserInfo.objects.get(account=account)
-            scores = ScoreInfo.objects.filter(student=student)
-            class_info = ClassInfo.objects.filter(student=student)
+            student = UserInfo.objects.get(account=account).studentinfo
+            exams = ExamInfo.objects.filter(exam_scores__student=student).distinct()
+            class_info = student.class_id.class_id
 
             if student:
                 exam_info_list = []
-                score_info_list = []
-                class_info_list = []
 
-                for score in scores:
-                    exam_info_list.append({
-                        'exam_time': score.exam.exam_time,
-                        'subject': score.exam.subject,
-                        'exam_name':score.exam.exam_name
-                    })
+                for exam in exams:
+                    exam_info = {
+                        'exam_time': exam.exam_time,
+                        'exam_name': exam.exam_name,
+                        'score': []
+                    }
+                    now_scores = ScoreInfo.objects.filter(exam=exam)
+                    for score in now_scores:
+                        exam_info['score'].append({
+                            'subject': score.subject,
+                            'score': score.score
+                        })
+                    exam_info_list.append(exam_info)
 
-                    score_info_list.append({
-                        'score_id': score.score_id,
-                        'score': score.score,
-
-                    })
-
-                for class_instance in class_info:
-                    class_info_list.append({
-                        'class_number': class_instance.class_number,
-                    })
 
                 response = {
                     'status_code': StatusCode.SUCCESS,
                     'status_msg': 'Success',
+                    'class_info': class_info,
                     'exam_info': exam_info_list,
-                    'score_info': score_info_list,
-                    'class_info': class_info_list,
                 }
 
             else:
