@@ -238,7 +238,7 @@ def get_score(request):
                     })
 
                 response = {
-                    'status_code': 0,
+                    'status_code': StatusCode.SUCCESS,
                     'status_msg': 'Success',
                     'exam_info': exam_info_list,
                     'score_info': score_info_list,
@@ -247,17 +247,17 @@ def get_score(request):
 
             else:
                 response = {
-                    'status_code': -1,
+                    'status_code': StatusCode.INVALID_ARGUMENT,
                     'status_msg': 'Failed',
                 }
 
         except UserInfo.DoesNotExist:
             response = {
-                'status_code': -1,
+                'status_code': StatusCode.NONE_DATA,
                 'status_msg': 'Failed',
             }
 
         return JsonResponse(response)
 
     else:
-        return JsonResponse({'status_code': -1, 'status_msg': 'Invalid request method'})
+        return JsonResponse({'status_code': StatusCode.INVALID_METHOD, 'status_msg': 'Invalid request method'})
