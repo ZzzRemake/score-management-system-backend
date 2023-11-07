@@ -15,13 +15,18 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from mylogin import views as mylogin
+from mylogin import login
+from mylogin import score
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('test1/', mylogin.test1),
-    path('login/',mylogin.login),
-    path('register/', mylogin.register),
+    path('test1/', login.test1),
+    path('login/', login.login),
+    path('register/', login.register),
+    path('score/create', score.create_score),
+    path('score/delete', score.delete_score),
+    path('score/list', score.list_score),
+    path('score/modify', score.modify_score),
     path('logout/', mylogin.logout),
     path('class_apend/',mylogin.class_apend),
     path('get_score/',mylogin.get_score)

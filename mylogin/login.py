@@ -3,6 +3,11 @@ from django.shortcuts import render
 # Create your views here.
 from django.http import JsonResponse
 
+from .const import StatusCode
+# from .models import UserInfo
+from .models import UserInfo
+
+
 def test1(request):
     # 处理你的接口逻辑
     data = {'message': 'Hello, this is your API response!'}
@@ -21,24 +26,24 @@ def login(request):
             user = UserInfo.objects.get(account=account, password=password)
             if user.is_login:
                 return JsonResponse({
-                    'status_code': 2,
+                    'status_code': StatusCode.DUPLICATE_DATA,
                     'status_msg': 'User already logged in'
                 })
             else:
                 user.is_login = True
                 user.save()
                 return JsonResponse({
-                    'status_code': 0,
+                    'status_code': StatusCode.SUCCESS,
                     'status_msg': 'Login successful'
                 })
         except UserInfo.DoesNotExist:
             return JsonResponse({
-                'status_code': 1,
+                'status_code': StatusCode.INVALID_ARGUMENT,
                 'status_msg': 'Account or password is incorrect'
             })
     else:
         return JsonResponse({
-            'status_code': -1,
+            'status_code': StatusCode.INVALID_METHOD,
             'status_msg': 'Invalid request method'
         })
 
@@ -50,21 +55,30 @@ def register(request):
         name = request.POST.get('name')
         role = request.POST.get('role')
 
+        # check repeat register
+        user_temp = UserInfo.objects.filter(account=account)
+        if user_temp:
+            return JsonResponse({
+                'status_code': StatusCode.DUPLICATE_DATA,
+                'status_msg': 'Registration failed. Error: duplicate register.'
+            })
+
+        # todo 有时间搞个邮箱验证码？
         try:
             user = UserInfo.objects.create(account=account, password=password, name=name, role=role,is_login=False)
             return JsonResponse({
-                'status_code': 0,
-                'status_msg': 'Registration successful'
+                'status_code': StatusCode.SUCCESS,
+                'status_msg': 'Registration successful',
 
             })
         except Exception as e:
             return JsonResponse({
-                'status_code': 1,
+                'status_code': StatusCode.INVALID_ARGUMENT,
                 'status_msg': 'Registration failed. Error: {}'.format(str(e))
             })
     else:
         return JsonResponse({
-            'status_code': 1,
+            'status_code': StatusCode.INVALID_METHOD,
             'status_msg': 'Invalid request method'
         })
 
