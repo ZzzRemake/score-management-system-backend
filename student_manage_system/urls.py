@@ -17,7 +17,7 @@ from django.contrib import admin
 from django.urls import path
 from mylogin import login
 from mylogin import score
-
+from mylogin import classes
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('test1/', login.test1),
@@ -27,7 +27,7 @@ urlpatterns = [
     path('score/delete', score.delete_score),
     path('score/list', score.list_score),
     path('score/modify', score.modify_score),
-    path('logout/', mylogin.logout),
-    path('class_apend/',mylogin.class_apend),
-    path('get_score/',mylogin.get_score)
+    path('logout/', login.logout),
+    path('class_apend/',classes.class_apend),
+    path('get_score/',score.get_score)
 ]

@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.core import serializers
 
-from .models import UserInfo, ScoreInfo, ExamInfo
+from .models import UserInfo, ScoreInfo, ExamInfo, ClassInfo
 from .const import SUBJECT_MAJOR, SUBJECT_ALL, StatusCode
 
 
@@ -206,5 +206,58 @@ def list_score(request):
         })
 
 
-def query_score(request):
-    pass
+def get_score(request):
+    if request.method == 'GET':
+        account = request.GET.get('account')
+        try:
+            student = UserInfo.objects.get(account=account)
+            scores = ScoreInfo.objects.filter(student=student)
+            class_info = ClassInfo.objects.filter(student=student)
+
+            if student:
+                exam_info_list = []
+                score_info_list = []
+                class_info_list = []
+
+                for score in scores:
+                    exam_info_list.append({
+                        'exam_time': score.exam.exam_time,
+                        'subject': score.exam.subject,
+                        'exam_name':score.exam.exam_name
+                    })
+
+                    score_info_list.append({
+                        'score_id': score.score_id,
+                        'score': score.score,
+
+                    })
+
+                for class_instance in class_info:
+                    class_info_list.append({
+                        'class_number': class_instance.class_number,
+                    })
+
+                response = {
+                    'status_code': 0,
+                    'status_msg': 'Success',
+                    'exam_info': exam_info_list,
+                    'score_info': score_info_list,
+                    'class_info': class_info_list,
+                }
+
+            else:
+                response = {
+                    'status_code': -1,
+                    'status_msg': 'Failed',
+                }
+
+        except UserInfo.DoesNotExist:
+            response = {
+                'status_code': -1,
+                'status_msg': 'Failed',
+            }
+
+        return JsonResponse(response)
+
+    else:
+        return JsonResponse({'status_code': -1, 'status_msg': 'Invalid request method'})
