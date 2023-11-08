@@ -287,6 +287,7 @@ def get_score_by_account(request):
     else:
         return JsonResponse({'status_code': StatusCode.INVALID_METHOD, 'status_msg': 'Invalid request method'})
 
+
 def check_score(request):
     """
     - user_id (integer, 必需)：学生用户id
@@ -350,6 +351,77 @@ def check_score(request):
             'status_msg': 'Check score success.'
         })
     
+    else:
+        # invalid method
+        return JsonResponse({
+            'status_code': StatusCode.INVALID_METHOD,
+            'status_msg': 'Invalid request method.'
+        })
+    
+
+def approve(request):
+    if request.method == 'POST':
+        try:
+            user_id = int(request.POST.get('user_id'))
+            check_id = int(request.POST.get('check_id'))
+            action = str(request.POST.get('action'))
+        except Exception:
+            return JsonResponse({
+                'status_code': StatusCode.INVALID_TYPE,
+                'status_msg': 'Approve failed. Error: invalid type.'
+            })
+        
+        # check exist necessary key
+        try:
+            teacher = TeacherInfo.objects.get(user_id=user_id)
+            check = CheckScoreInfo.objects.get(check_id=check_id)
+        except TeacherInfo.DoesNotExist:
+            return JsonResponse({
+                'status_code': StatusCode.INVALID_ARGUMENT,
+                'status_msg': 'Approve failed. Error: invalid teacher.'
+            })
+        except CheckScoreInfo.DoesNotExist:
+            return JsonResponse({
+                'status_code': StatusCode.INVALID_ARGUMENT,
+                'status_msg': 'Approve failed. Error: invalid check.'
+            })
+        
+        # check the check is not successful
+        if check.is_successful:
+            return JsonResponse({
+                'status_code': StatusCode.INVALID_ARGUMENT,
+                'status_msg': 'Approve failed. Error: check is already successful.'
+            })
+        
+        # check the action is null
+        if action == '':
+            return JsonResponse({
+                'status_code': StatusCode.INVALID_ARGUMENT,
+                'status_msg': 'Approve failed. Error: action can not be empty.'
+            })
+        
+        # check the action is invalid
+        if action != 'approve' and action != 'reject':
+            return JsonResponse({
+                'status_code': StatusCode.INVALID_ARGUMENT,
+                'status_msg': 'Approve failed. Error: invalid action.'
+            })
+        
+        # approve or reject
+        if action == 'approve':
+            check.is_successful = True
+            check.save()
+            return JsonResponse({
+                'status_code': StatusCode.SUCCESS,
+                'status_msg': 'Approve success.'
+            })
+        else:
+            check.delete()
+            return JsonResponse({
+                'status_code': StatusCode.SUCCESS,
+                'status_msg': 'Reject success.'
+            })
+        
     else:
         # invalid method
         return JsonResponse({
