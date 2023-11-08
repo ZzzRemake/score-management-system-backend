@@ -1,7 +1,6 @@
 from django.http import JsonResponse
-from django.core import serializers
 
-from .models import UserInfo, ScoreInfo, ExamInfo,ClassInfo
+from .models import ClassInfo
 from .const import StatusCode
 
 # class append并不在用户界面中使用，而应当是事先指定的

@@ -13,7 +13,7 @@ def test1(request):
 
 
 # from .models import UserInfo
-from .models import UserInfo, ExamInfo, ScoreInfo, ClassInfo
+from .models import UserInfo
 
 
 def login(request):
@@ -33,7 +33,9 @@ def login(request):
                 user.save()
                 return JsonResponse({
                     'status_code': StatusCode.SUCCESS,
-                    'status_msg': 'Login successful'
+                    'status_msg': 'Login successful',
+                    'user_id': user.user_id,
+                    'role': user.role
                 })
         except UserInfo.DoesNotExist:
             return JsonResponse({

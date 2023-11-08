@@ -18,16 +18,26 @@ from django.urls import path
 from mylogin import login
 from mylogin import score
 from mylogin import classes
+from mylogin import checkscore
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('test1/', login.test1),
     path('login/', login.login),
     path('register/', login.register),
+    path('logout/', login.logout),
+
+    path('class_append/', classes.class_append),
+    path('get_score/', score.get_score_by_account),
+
     path('score/create', score.create_score),
     path('score/delete', score.delete_score),
     path('score/list', score.list_score),
     path('score/modify', score.modify_score),
-    path('logout/', login.logout),
-    path('class_append/', classes.class_append),
-    path('get_score/', score.get_score_by_account)
+
+
+
+    path('check_score/list/teacher', checkscore.list_check_score_by_teacher),
+    path('check_score/list/student', checkscore.list_check_score_by_student),
+    path('check_score/operate', checkscore.operate_check_score),
+    path('check_score/create', checkscore.create_check_score),
 ]

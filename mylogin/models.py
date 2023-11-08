@@ -47,9 +47,14 @@ class ScoreInfo(models.Model):
 
 class CheckScoreInfo(models.Model):
     check_id = models.AutoField(primary_key=True)
-    student = models.ForeignKey(UserInfo, on_delete=models.CASCADE, related_name='student_checks')
-    exam = models.ForeignKey(ExamInfo, on_delete=models.CASCADE, related_name='exam_checks')
+    student = models.ForeignKey(StudentInfo, on_delete=models.CASCADE, related_name='student_checks')
     score = models.ForeignKey(ScoreInfo, on_delete=models.CASCADE, related_name='score_checks')
-    is_successful = models.BooleanField()
+    reason = models.CharField(max_length=100, default='')
+    STATUS_CHOICES = [
+        ('wait', 'Wait'),
+        ('approve', 'Approve'),
+        ('reject', 'Reject'),
+    ]
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='wait')
 
 
