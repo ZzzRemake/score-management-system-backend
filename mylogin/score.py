@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.core import serializers
 
-from .models import UserInfo, ScoreInfo, ExamInfo, ClassInfo, StudentInfo, TeacherInfo
+from .models import UserInfo, ScoreInfo, ExamInfo, ClassInfo, StudentInfo, TeacherInfo, CheckScoreInfo
 from .const import SUBJECT_MAJOR, SUBJECT_ALL, StatusCode
 
 def _check_score_validate(score:int, subject: str):
@@ -286,3 +286,73 @@ def get_score_by_account(request):
 
     else:
         return JsonResponse({'status_code': StatusCode.INVALID_METHOD, 'status_msg': 'Invalid request method'})
+
+def check_score(request):
+    """
+    - user_id (integer, 必需)：学生用户id
+    - exam_id (integer, 必需)：考试id
+    - reason (string, 必需)：申请原因
+
+    根据所给的全部信息，创建申请查分表项。
+
+    :param request.user_id: str
+    :return: JsonResponse(
+        'status_code': int
+        'status_msg': str
+    )
+    """
+    if request.method == 'POST':
+        try:
+            student_id = int(request.POST.get('student_id'))
+            exam_id = int(request.POST.get('exam_id'))
+            reason = str(request.POST.get('reason'))
+        except ValueError:
+            return JsonResponse({
+                'status_code': StatusCode.INVALID_TYPE,
+                'status_msg': 'Check score failed. Error: invalid type'
+            })
+        
+        # check the reason is null
+        if reason == '':
+            return JsonResponse({
+                'status_code': StatusCode.INVALID_ARGUMENT,
+                'status_msg': 'Check score failed. Error: reason can not be empty.'
+            })
+        
+        # check exist necessary key
+        try:
+            student = StudentInfo.objects.get(user_id=student_id)
+            exam = ExamInfo.objects.get(exam_id=exam_id)
+        except StudentInfo.DoesNotExist:
+            return JsonResponse({
+                'status_code': StatusCode.INVALID_ARGUMENT,
+                'status_msg': 'Check score failed. Error: invalid student.'
+            })
+        except ExamInfo.DoesNotExist:
+            return JsonResponse({
+                'status_code': StatusCode.INVALID_ARGUMENT,
+                'status_msg': 'Check score failed. Error: invalid exam.'
+            })
+
+        # create and save data
+        check, created = CheckScoreInfo.objects.get_or_create(student_id=student_id, exam_id=exam_id, reason=reason)
+
+        if created:
+            check.save()
+        else:
+            return JsonResponse({
+            'status_code': StatusCode.DUPLICATE_DATA,
+            'status_msg': 'Check score success.'
+        })
+
+        return JsonResponse({
+            'status_code': StatusCode.SUCCESS,
+            'status_msg': 'Check score success.'
+        })
+    
+    else:
+        # invalid method
+        return JsonResponse({
+            'status_code': StatusCode.INVALID_METHOD,
+            'status_msg': 'Invalid request method.'
+        })
