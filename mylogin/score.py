@@ -75,7 +75,7 @@ def create_score(request):
         else:
             return JsonResponse({
             'status_code': StatusCode.DUPLICATE_DATA,
-            'status_msg': 'Create score success.'
+            'status_msg': 'Create score failed. Error: duplicate data.'
         })
         return JsonResponse({
             'status_code': StatusCode.SUCCESS,
