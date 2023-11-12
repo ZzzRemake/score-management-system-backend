@@ -25,8 +25,10 @@ def login(request):
             if user.is_login:
                 # todo 这里是否要改成重定向？既然重新登陆了，那就应该让用户进系统。
                 return JsonResponse({
-                    'status_code': StatusCode.DUPLICATE_DATA,
-                    'status_msg': 'User already logged in'
+                    'status_code': StatusCode.SUCCESS,
+                    'status_msg': 'Login successful',
+                    'user_id': user.user_id,
+                    'role': user.role
                 })
             else:
                 user.is_login = True
