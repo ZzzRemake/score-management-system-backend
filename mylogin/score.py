@@ -219,7 +219,8 @@ def list_score(request):
                 exam_info['score'].append({
                     'student': score.student.student_name,
                     'subject': score.subject,
-                    'score': score.score
+                    'score': score.score,
+                    'score_id': score.score_id,
                 })
             score_info.append(exam_info)
 
@@ -257,7 +258,8 @@ def get_score_by_account(request):
                     for score in now_scores:
                         exam_info['score'].append({
                             'subject': score.subject,
-                            'score': score.score
+                            'score': score.score,
+                            'score_id': score.score_id
                         })
                     exam_info_list.append(exam_info)
 
